@@ -1,0 +1,65 @@
+/*
+ *   Copyright 2014 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU Library General Public License as
+ *   published by the Free Software Foundation; either version 2, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details
+ *
+ *   You should have received a copy of the GNU Library General Public
+ *   License along with this program; if not, write to the
+ *   Free Software Foundation, Inc.,
+ *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include "objectdebug.h"
+#include "../objecttimetracker.h"
+#include "../objectwatcher.h"
+
+ObjectDebug::ObjectDebug(QObject* object)
+    : QObject(object)
+{}
+
+void ObjectDebug::setTimeTracker(bool timeTracker)
+{
+    if (timeTracker == bool(m_timeTracker))
+        return;
+
+    if (!m_timeTracker) {
+        m_timeTracker = QPointer<ObjectTimeTracker>{ new ObjectTimeTracker(parent()) };
+    } else {
+        delete m_timeTracker;
+    }
+}
+
+void ObjectDebug::setWatch(bool watch)
+{
+    if (watch == bool(m_watcher))
+        return;
+
+    if (!m_watcher) {
+        m_watcher = QPointer<ObjectWatcher>(new ObjectWatcher(parent()));
+    } else {
+        delete m_watcher;
+    }
+}
+
+bool ObjectDebug::timeTracker() const
+{
+    return m_timeTracker;
+}
+
+bool ObjectDebug::watch() const
+{
+    return m_watcher;
+}
+
+ObjectDebug* ObjectDebug::qmlAttachedProperties(QObject* object)
+{
+    return new ObjectDebug(object);
+}

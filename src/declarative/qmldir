@@ -1,0 +1,3 @@
+module org.kde.ObjectTracking
+
+plugin KF5ObjectTrackingDeclarative

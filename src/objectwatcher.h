@@ -40,8 +40,6 @@ public:
 
     ObjectWatcher(QObject* object);
 
-    bool eventFilter(QObject * watched, QEvent * event) override;
-
     Q_SLOT void propertyChanged();
 
     static void watch(QObject* object);

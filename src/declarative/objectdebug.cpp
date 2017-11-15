@@ -21,6 +21,8 @@
 #include "../objecttimetracker.h"
 #include "../objectwatcher.h"
 
+#include <QChildEvent>
+
 ObjectDebug::ObjectDebug(QObject* object)
     : QObject(object)
 {}
@@ -57,6 +59,35 @@ bool ObjectDebug::timeTracker() const
 bool ObjectDebug::watch() const
 {
     return m_watcher;
+}
+
+bool ObjectDebug::inherit() const
+{
+    return m_inherit;
+}
+
+void ObjectDebug::setInherit(bool inherit)
+{
+    if (inherit == m_inherit)
+        return;
+
+    const auto object = parent();
+    for(auto o: object->children())
+        ObjectWatcher::watch(o);
+
+    object->installEventFilter(this);
+}
+
+bool ObjectDebug::eventFilter(QObject* watched, QEvent* event)
+{
+    Q_ASSERT(watched == parent());
+
+    if (event->type() == QEvent::ChildAdded) {
+        QChildEvent* childEvent = static_cast<QChildEvent*>(event);
+        Q_ASSERT(childEvent->added());
+        ObjectWatcher::watch(childEvent->child());
+    }
+    return QObject::eventFilter(watched, event);
 }
 
 ObjectDebug* ObjectDebug::qmlAttachedProperties(QObject* object)

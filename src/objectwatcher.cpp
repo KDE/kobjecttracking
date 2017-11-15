@@ -20,7 +20,6 @@
 #include "objectwatcher.h"
 
 #include <QMetaProperty>
-#include <QChildEvent>
 #include <QDebug>
 
 void ObjectWatcher::PropertyValue::integrateValue(QObject* object, const QMetaProperty& prop, const QVariant& value)
@@ -53,25 +52,8 @@ ObjectWatcher::ObjectWatcher(QObject* object)
         }
     }
 
-    for(auto o: object->children())
-        ObjectWatcher::watch(o);
-
-    object->installEventFilter(this);
     connect(object, &QObject::destroyed, this, &QObject::deleteLater);
 }
-
-bool ObjectWatcher::eventFilter(QObject* watched, QEvent* event)
-{
-    Q_ASSERT(watched == m_watched);
-
-    if (event->type() == QEvent::ChildAdded) {
-        QChildEvent* childEvent = static_cast<QChildEvent*>(event);
-        Q_ASSERT(childEvent->added());
-        watch(childEvent->child());
-    }
-    return QObject::eventFilter(watched, event);
-}
-
 
 void ObjectWatcher::propertyChanged()
 {

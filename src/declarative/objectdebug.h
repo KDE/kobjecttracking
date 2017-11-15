@@ -32,6 +32,7 @@ class ObjectDebug : public QObject
     Q_OBJECT
     Q_PROPERTY(bool watch READ watch WRITE setWatch)
     Q_PROPERTY(bool timeTracker READ timeTracker WRITE setTimeTracker)
+    Q_PROPERTY(bool inherit READ inherit WRITE setInherit)
 public:
     ObjectDebug(QObject* object);
 
@@ -41,11 +42,17 @@ public:
     void setTimeTracker(bool timeTracker);
     bool timeTracker() const;
 
+    void setInherit(bool inherit);
+    bool inherit() const;
+
     static ObjectDebug *qmlAttachedProperties(QObject *object);
+
+    bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
     QPointer<ObjectTimeTracker> m_timeTracker;
     QPointer<ObjectWatcher> m_watcher;
+    bool m_inherit = false;
 };
 
 QML_DECLARE_TYPEINFO(ObjectDebug, QML_HAS_ATTACHED_PROPERTIES)

@@ -17,25 +17,45 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <QQmlExtensionPlugin>
-#include <qqml.h>
-#include "objectdebug.h"
+#ifndef OBJECTTRACKING_H
+#define OBJECTTRACKING_H
 
-QML_DECLARE_TYPEINFO(ObjectDebug, QML_HAS_ATTACHED_PROPERTIES)
+#include <QObject>
+#include <QSet>
 
-class KirigamiPlugin : public QQmlExtensionPlugin
+#include "kobjecttracking_export.h"
+
+class ObjectDebug;
+
+class KOBJECTTRACKING_EXPORT ObjectTracking : public QObject
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
-
+Q_OBJECT
 public:
-    void registerTypes(const char *uri) override
-    {
-        Q_ASSERT(QLatin1String(uri) == QLatin1String("org.kde.ObjectTracking"));
+    ObjectTracking(QObject* parent = nullptr);
+    ~ObjectTracking() override;
 
-        qmlRegisterUncreatableType<ObjectDebug>(uri, 1, 0, "ObjectDebug", QStringLiteral("Cannot create objects of type ObjectDebug, use it as an attached poperty"));
-    }
+    /** If it's easier to use it as a singleton, it's also possible */
+    static ObjectTracking* self();
+
+    enum Option {
+        Watch = 1,
+        Track = 2
+    };
+    Q_ENUM(Option);
+    Q_DECLARE_FLAGS(Options, Option)
+
+    enum Depth {
+        Alone,
+        Inherit
+    };
+    Q_ENUM(Depth);
+
+    void track(QObject* object, Options options, Depth depth);
+
+private:
+    QSet<QPointer<ObjectDebug>> m_used;
 };
 
+Q_DECLARE_OPERATORS_FOR_FLAGS(ObjectTracking::Options)
 
-#include "objecttrackingplugin.moc"
+#endif

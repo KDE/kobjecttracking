@@ -21,20 +21,22 @@
 
 #include <QObject>
 #include <QPointer>
+#include <QSet>
 
-#include <qqml.h>
+#include "kobjecttracking_export.h"
 
 class ObjectTimeTracker;
 class ObjectWatcher;
 
-class ObjectDebug : public QObject
+class KOBJECTTRACKING_EXPORT ObjectDebug : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(bool watch READ watch WRITE setWatch)
-    Q_PROPERTY(bool timeTracker READ timeTracker WRITE setTimeTracker)
+    Q_PROPERTY(bool watch READ watch WRITE setWatch NOTIFY watchChanged)
+    Q_PROPERTY(bool timeTracker READ timeTracker WRITE setTimeTracker NOTIFY timeTrackerChanged)
     Q_PROPERTY(bool inherit READ inherit WRITE setInherit)
 public:
     ObjectDebug(QObject* object);
+    ~ObjectDebug() override;
 
     void setWatch(bool watch);
     bool watch() const;
@@ -49,12 +51,20 @@ public:
 
     bool eventFilter(QObject* watched, QEvent* event) override;
 
+Q_SIGNALS:
+    void watchChanged(bool watch);
+    void timeTrackerChanged(bool timeTracker);
+    void independence(ObjectDebug* od);
+
 private:
+    void addChild(QObject* child);
+    void childDestroyed(QObject* object);
+
+    QPointer<QObject> m_object;
     QPointer<ObjectTimeTracker> m_timeTracker;
     QPointer<ObjectWatcher> m_watcher;
+    QSet<ObjectDebug*> m_children;
     bool m_inherit = false;
 };
-
-QML_DECLARE_TYPEINFO(ObjectDebug, QML_HAS_ATTACHED_PROPERTIES)
 
 #endif

@@ -38,8 +38,9 @@ void ObjectWatcher::PropertyValue::integrateValue(QObject* object, const QMetaPr
 ObjectWatcher::ObjectWatcher(QObject* object)
     : m_watched(object)
 {
-    QMetaMethod propChange = metaObject()->method(metaObject()->indexOfSlot("propertyChanged()"));
-    Q_ASSERT(propChange.isValid() && metaObject()->indexOfSlot("propertyChanged()")>=0);
+    const auto &meta = ObjectWatcher::staticMetaObject;
+    QMetaMethod propChange = meta.method(meta.indexOfSlot("propertyChanged()"));
+    Q_ASSERT(propChange.isValid() && meta.indexOfSlot("propertyChanged()")>=0);
 
     const auto mo = object->metaObject();
     for(int i = 0;  i<mo->propertyCount(); ++i) {
@@ -68,18 +69,4 @@ void ObjectWatcher::propertyChanged()
             m_values[prop.name()].integrateValue(m_watched, prop, value);
         }
     }
-}
-
-void ObjectWatcher::watch(QObject* object)
-{
-    static QSet<QObject*> objects;
-    if (objects.contains(object) || object->metaObject()->className() == ObjectWatcher::staticMetaObject.className())
-        return;
-    if (object->metaObject()->className() == QByteArray("QAction")) //it's _very_ noisy and probably a liability
-        return;
-    if (object->metaObject()->className() == QByteArray("Kirigami::BasicTheme")) //it's _very_ noisy and probably a liability
-        return;
-
-    objects.insert(object);
-    new ObjectWatcher(object);
 }

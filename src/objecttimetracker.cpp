@@ -69,7 +69,6 @@ public:
 private:
     QJsonArray serializeEvents(const QVector<TimeEvent>& events) const {
         QJsonArray ret;
-        Q_ASSERT(!events.isEmpty());
         foreach(const TimeEvent& ev, events) {
             ret.append(QJsonObject {
                 { QStringLiteral("comment"), ev.comment },
@@ -83,7 +82,8 @@ private:
 Q_GLOBAL_STATIC(TimeTrackerWriter, s_writer)
 
 ObjectTimeTracker::ObjectTimeTracker(QObject* o)
-    : QObject(o)
+    : QObject()
+    , m_object(o)
 {
     *s_beginning * 1; // ensure it's initialized
 
@@ -93,18 +93,18 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     connect(t, SIGNAL(timeout()), this, SLOT(sync()));
     t->start();
 
-    QMetaObject::invokeMethod(this, "init", Qt::QueuedConnection);
-    ObjectWatcher::watch(o);
+    connect(o, &QObject::destroyed, this, &QObject::deleteLater);
+    QTimer::singleShot(0, this, &ObjectTimeTracker::init);
 }
 
 void ObjectTimeTracker::init()
 {
-    m_history.events.append(TimeEvent { QDateTime::currentDateTime(), QStringLiteral("constructed %1 %2").arg(QLatin1String(parent()->metaObject()->className()), parent()->objectName()) });
+    m_history.events.append(TimeEvent { QDateTime::currentDateTime(), QStringLiteral("constructed %1 %2").arg(QLatin1String(m_object->metaObject()->className()), m_object->objectName()) });
 
     QMetaMethod propChange = metaObject()->method(metaObject()->indexOfSlot("propertyChanged()"));
     Q_ASSERT(propChange.isValid() && metaObject()->indexOfSlot("propertyChanged()")>=0);
 
-    QObject* o = parent();
+    QObject* o = m_object;
     for (int i = 0, pc = o->metaObject()->propertyCount(); i<pc; ++i) {
         QMetaProperty prop = o->metaObject()->property(i);
         m_history.initial[QLatin1String(prop.name())] = prop.read(o);
@@ -121,21 +121,21 @@ ObjectTimeTracker::~ObjectTimeTracker()
 
 void ObjectTimeTracker::sync()
 {
-    s_writer->feed(parent(), m_history);
+    s_writer->feed(m_object, m_history);
 }
 
 void ObjectTimeTracker::propertyChanged()
 {
-    Q_ASSERT(sender() == parent());
+    Q_ASSERT(sender() == m_object);
 
-    const QMetaObject* mo = parent()->metaObject();
+    const QMetaObject* mo = m_object->metaObject();
 
     for (int i = 0, pc = mo->propertyCount(); i<pc; ++i) {
         const QMetaProperty prop = mo->property(i);
         if (prop.notifySignalIndex() == senderSignalIndex()) {
             QString val;
             QDebug d(&val);
-            d << prop.read(parent());
+            d << prop.read(m_object);
             m_history.events.append(TimeEvent { QDateTime::currentDateTime(), QStringLiteral("property %1 changed to %2").arg(QLatin1String(prop.name()), val.trimmed())});
         }
     }

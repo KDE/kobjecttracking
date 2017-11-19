@@ -25,8 +25,6 @@
 #include <QDateTime>
 #include <QVector>
 
-#include <kobjecttracking_export.h>
-
 class Containment;
 class Applet;
 
@@ -50,23 +48,24 @@ struct ObjectHistory
  * will use Qt introspection to read the properties and check what values they have and how they
  * change.
  *
- * To analyze the results one can read the generated json file /tmp/debug-$USER, as soon
+ * To analyze the results one can read the generated json file /tmp/debug-$application-$USER, as soon
  * as the process has quit.
  */
 
-class KOBJECTTRACKING_EXPORT ObjectTimeTracker : public QObject
+class ObjectTimeTracker : public QObject
 {
 Q_OBJECT
 public:
-    ObjectTimeTracker(QObject* applet);
+    explicit ObjectTimeTracker(QObject* object);
     ~ObjectTimeTracker() override;
+    void init();
 
 private Q_SLOTS:
-    void init();
     void sync();
     void propertyChanged();
 
 private:
+    QObject* m_object;
     ObjectHistory m_history;
 };
 

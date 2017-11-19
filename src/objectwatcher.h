@@ -1,5 +1,5 @@
 /*
- *   Copyright 2014 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
+ *   Copyright 2017 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License as
@@ -24,9 +24,7 @@
 #include <QVariant>
 #include <QHash>
 
-#include <kobjecttracking_export.h>
-
-class KOBJECTTRACKING_EXPORT ObjectWatcher : public QObject
+class ObjectWatcher : public QObject
 {
     Q_OBJECT
 public:
@@ -38,11 +36,9 @@ public:
         void integrateValue(QObject* object, const QMetaProperty& prop, const QVariant& value);
     };
 
-    ObjectWatcher(QObject* object);
+    explicit ObjectWatcher(QObject* object);
 
     Q_SLOT void propertyChanged();
-
-    static void watch(QObject* object);
 
 private:
     QObject* const m_watched;

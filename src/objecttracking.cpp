@@ -17,25 +17,28 @@
  *   51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <QQmlExtensionPlugin>
-#include <qqml.h>
+#include "objecttracking.h"
 #include "objectdebug.h"
 
-QML_DECLARE_TYPEINFO(ObjectDebug, QML_HAS_ATTACHED_PROPERTIES)
+ObjectTracking::ObjectTracking(QObject* parent)
+    : QObject(parent)
+{}
 
-class KirigamiPlugin : public QQmlExtensionPlugin
+ObjectTracking * ObjectTracking::self()
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
+    static ObjectTracking self;
+    return &self;
+}
 
-public:
-    void registerTypes(const char *uri) override
-    {
-        Q_ASSERT(QLatin1String(uri) == QLatin1String("org.kde.ObjectTracking"));
+ObjectTracking::~ObjectTracking()
+{
+    qDeleteAll(m_used);
+}
 
-        qmlRegisterUncreatableType<ObjectDebug>(uri, 1, 0, "ObjectDebug", QStringLiteral("Cannot create objects of type ObjectDebug, use it as an attached poperty"));
-    }
-};
-
-
-#include "objecttrackingplugin.moc"
+void ObjectTracking::track(QObject* object, ObjectTracking::Options options, ObjectTracking::Depth depth)
+{
+    auto od = ObjectDebug::qmlAttachedProperties(object);
+    od->setWatch(options & Watch);
+    od->setTimeTracker(options & Track);
+    od->setInherit(depth == Inherit);
+}

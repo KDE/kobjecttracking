@@ -30,9 +30,9 @@ class ObjectDecorator
     QHash<QObject*, ObjectDebug*> m_debugs;
 
 public:
-    void setDebugForObject(QObject* object, ObjectDebug* dbg)
+    void setDebugForObject(QObject* object, ObjectDebug* dbg, bool anyway = false)
     {
-        Q_ASSERT(m_debugs.value(object) == nullptr);
+        Q_ASSERT(m_debugs.value(object) == nullptr || anyway);
         m_debugs[object] = dbg;
     }
 
@@ -135,8 +135,7 @@ void ObjectDebug::childDestroyed(QObject* object)
         return;
     }
 
-    auto removed = m_children.remove(od);
-    Q_ASSERT(removed);
+    m_children.remove(od);
 }
 
 void ObjectDebug::addChild(QObject* child)
@@ -172,7 +171,7 @@ ObjectDebug* ObjectDebug::qmlAttachedProperties(QObject* object)
         od = new ObjectDebug(object);
     } else {
         Q_EMIT od->independence(od);
-        ourDecorator->setDebugForObject(object, od);
+        ourDecorator->setDebugForObject(object, od, true);
     }
     return od;
 }

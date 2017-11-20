@@ -98,7 +98,8 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
 
 void ObjectTimeTracker::init()
 {
-    m_history.name = QString::fromUtf8(m_object->metaObject()->className());
+    auto mo = m_object->metaObject();
+    m_history.name = QString::fromUtf8(mo->className());
     m_history.events.append(QJsonObject {
         { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
         { QStringLiteral("type"), QStringLiteral("constructor") },
@@ -110,8 +111,8 @@ void ObjectTimeTracker::init()
     Q_ASSERT(propChange.isValid() && metaObject()->indexOfSlot("propertyChanged()")>=0);
 
     QObject* o = m_object;
-    for (int i = 0, pc = o->metaObject()->propertyCount(); i<pc; ++i) {
-        QMetaProperty prop = o->metaObject()->property(i);
+    for (int i = 0, pc = mo->propertyCount(); i<pc; ++i) {
+        QMetaProperty prop = mo->property(i);
         m_history.initial[QLatin1String(prop.name())] = prop.read(o);
 
         if (prop.hasNotifySignal())

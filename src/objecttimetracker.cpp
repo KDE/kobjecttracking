@@ -1,5 +1,5 @@
 /*
- *   Copyright 2014 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
+ *   Copyright 2014-2017 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License as
@@ -46,6 +46,7 @@ public:
 
         Q_FOREACH(const ObjectHistory& history, m_data) {
             array.append(QJsonObject {
+                { QStringLiteral("name"), history.name },
                 { QStringLiteral("events"), serializeEvents(history.events) },
                 { QStringLiteral("initial"), QJsonValue::fromVariant(history.initial) }
             });
@@ -91,16 +92,17 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     connect(t, SIGNAL(timeout()), this, SLOT(sync()));
     t->start();
 
-    connect(o, &QObject::destroyed, this, &QObject::deleteLater);
     QTimer::singleShot(0, this, &ObjectTimeTracker::init);
+    connect(o, &QObject::destroyed, this, &ObjectTimeTracker::objectDestroyed);
 }
 
 void ObjectTimeTracker::init()
 {
+    m_history.name = QString::fromUtf8(m_object->metaObject()->className());
     m_history.events.append(QJsonObject {
         { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
         { QStringLiteral("type"), QStringLiteral("constructor") },
-        { QStringLiteral("name"), QString::fromUtf8(m_object->metaObject()->className()) },
+        { QStringLiteral("name"), {} },
         { QStringLiteral("value"), m_object->objectName() }
     });
 
@@ -120,6 +122,15 @@ void ObjectTimeTracker::init()
 ObjectTimeTracker::~ObjectTimeTracker()
 {
     sync();
+}
+
+void ObjectTimeTracker::objectDestroyed()
+{
+    m_history.events.append(QJsonObject {
+        { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
+        { QStringLiteral("type"), QStringLiteral("destoyed") }
+    });
+    deleteLater();
 }
 
 void ObjectTimeTracker::sync()

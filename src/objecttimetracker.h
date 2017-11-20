@@ -1,5 +1,5 @@
 /*
- *   Copyright 2014 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
+ *   Copyright 2014-2017 by Aleix Pol Gonzalez <aleixpol@blue-systems.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License as
@@ -30,6 +30,7 @@ class Applet;
 
 struct ObjectHistory
 {
+    QString name;
     QVariantMap initial;
     QVector<QJsonObject> events;
 };
@@ -57,6 +58,7 @@ public:
 private Q_SLOTS:
     void sync();
     void propertyChanged();
+    void objectDestroyed();
 
 private:
     QObject* m_object;

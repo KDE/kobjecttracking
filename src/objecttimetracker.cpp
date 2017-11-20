@@ -92,12 +92,8 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     connect(t, SIGNAL(timeout()), this, SLOT(sync()));
     t->start();
 
-    QTimer::singleShot(0, this, &ObjectTimeTracker::init);
     connect(o, &QObject::destroyed, this, &ObjectTimeTracker::objectDestroyed);
-}
 
-void ObjectTimeTracker::init()
-{
     auto mo = m_object->metaObject();
     m_history.name = QString::fromUtf8(mo->className());
     m_history.events.append(QJsonObject {
@@ -110,7 +106,6 @@ void ObjectTimeTracker::init()
     QMetaMethod propChange = metaObject()->method(metaObject()->indexOfSlot("propertyChanged()"));
     Q_ASSERT(propChange.isValid() && metaObject()->indexOfSlot("propertyChanged()")>=0);
 
-    QObject* o = m_object;
     for (int i = 0, pc = mo->propertyCount(); i<pc; ++i) {
         QMetaProperty prop = mo->property(i);
         m_history.initial[QLatin1String(prop.name())] = prop.read(o);

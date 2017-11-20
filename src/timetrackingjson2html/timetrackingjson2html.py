@@ -70,12 +70,17 @@ if __name__ == '__main__':
     values = []
     with open(args.input) as json_data:
         data = json.load(json_data)
+
+        endoftimes = 0
+        for v in data:
+            endoftimes = max(endoftimes, v['events'][-1]['time'])
+
         for v in data:
             name = uniqueObjectName(v['name'])
             events = v['events']
             initial = v["initial"]
             construction = events[0]['time']
-            destruction  = events[-1]['time']
+            destruction  = events[-1]['time'] if events[-1]['type'] == 'destruction' else endoftimes
             lastTime = {}
             unchangedProperties = initial.copy()
 

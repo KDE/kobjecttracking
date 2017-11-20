@@ -28,16 +28,10 @@
 class Containment;
 class Applet;
 
-struct TimeEvent
-{
-    QDateTime moment;
-    QString comment;
-};
-
 struct ObjectHistory
 {
     QVariantMap initial;
-    QVector<TimeEvent> events;
+    QVector<QJsonObject> events;
 };
 
 /**

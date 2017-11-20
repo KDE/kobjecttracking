@@ -21,6 +21,7 @@
 #include <QDateTime>
 #include <qmetaobject.h>
 #include <QFile>
+#include <QString>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -67,13 +68,10 @@ public:
     QHash<QObject*, ObjectHistory> m_data;
 
 private:
-    QJsonArray serializeEvents(const QVector<TimeEvent>& events) const {
+    QJsonArray serializeEvents(const QVector<QJsonObject>& events) const {
         QJsonArray ret;
-        foreach(const TimeEvent& ev, events) {
-            ret.append(QJsonObject {
-                { QStringLiteral("comment"), ev.comment },
-                { QStringLiteral("time"), ev.moment.toMSecsSinceEpoch() - *s_beginning }
-            });
+        for(const auto& ev: events) {
+            ret.append(ev);
         }
         Q_ASSERT(ret.count() == events.count());
         return ret;
@@ -99,7 +97,12 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
 
 void ObjectTimeTracker::init()
 {
-    m_history.events.append(TimeEvent { QDateTime::currentDateTime(), QStringLiteral("constructed %1 %2").arg(QLatin1String(m_object->metaObject()->className()), m_object->objectName()) });
+    m_history.events.append(QJsonObject {
+        { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
+        { QStringLiteral("type"), QStringLiteral("constructor") },
+        { QStringLiteral("name"), QString::fromUtf8(m_object->metaObject()->className()) },
+        { QStringLiteral("value"), m_object->objectName() }
+    });
 
     QMetaMethod propChange = metaObject()->method(metaObject()->indexOfSlot("propertyChanged()"));
     Q_ASSERT(propChange.isValid() && metaObject()->indexOfSlot("propertyChanged()")>=0);
@@ -136,7 +139,12 @@ void ObjectTimeTracker::propertyChanged()
             QString val;
             QDebug d(&val);
             d << prop.read(m_object);
-            m_history.events.append(TimeEvent { QDateTime::currentDateTime(), QStringLiteral("property %1 changed to %2").arg(QLatin1String(prop.name()), val.trimmed())});
+            m_history.events.append(QJsonObject {
+                { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
+                { QStringLiteral("type"), QStringLiteral("property") },
+                { QStringLiteral("name"), QString::fromLatin1(prop.name()) },
+                { QStringLiteral("value"), val }
+            });
         }
     }
 }

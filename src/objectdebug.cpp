@@ -27,7 +27,6 @@
 
 class ObjectDecorator
 {
-    const char* propName = "kobjecttracking_objectdebug";
     QHash<QObject*, ObjectDebug*> m_debugs;
 
 public:
@@ -39,7 +38,6 @@ public:
 
     ObjectDebug* debugForObject(QObject* object)
     {
-//         return dynamic_cast<ObjectDebug*>(object->property(propName).value<QObject*>());
         return m_debugs.value(object);
     }
 

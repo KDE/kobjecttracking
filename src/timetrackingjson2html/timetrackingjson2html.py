@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
             values.append([name, "lifetime", construction, destruction])
             for e in events:
-                propName = e['name'] if name in e else None
+                propName = e['name'] if 'name' in e else None
                 if not propName:
                     continue
 

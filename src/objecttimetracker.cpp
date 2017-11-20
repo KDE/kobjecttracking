@@ -38,10 +38,10 @@ struct TimeTrackerWriter : QObject {
     Q_OBJECT
 public:
     TimeTrackerWriter() {
-        QObject::connect(QCoreApplication::instance(), &QCoreApplication::aboutToQuit, this, static_cast<void (TimeTrackerWriter::*)()>(&TimeTrackerWriter::print));
+        QObject::connect(QCoreApplication::instance(), &QCoreApplication::destroyed, this, &TimeTrackerWriter::print);
     }
 
-    void print() {
+    void print() const {
         QJsonArray array;
 
         Q_FOREACH(const ObjectHistory& history, m_data) {
@@ -89,7 +89,7 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     QTimer* t = new QTimer(this);
     t->setInterval(2000);
     t->setSingleShot(false);
-    connect(t, SIGNAL(timeout()), this, SLOT(sync()));
+    connect(t, &QTimer::timeout, this, &ObjectTimeTracker::sync);
     t->start();
 
     connect(o, &QObject::destroyed, this, &ObjectTimeTracker::objectDestroyed);
@@ -124,7 +124,7 @@ void ObjectTimeTracker::objectDestroyed()
 {
     m_history.events.append(QJsonObject {
         { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
-        { QStringLiteral("type"), QStringLiteral("destoyed") }
+        { QStringLiteral("type"), QStringLiteral("destroyed") }
     });
     deleteLater();
 }

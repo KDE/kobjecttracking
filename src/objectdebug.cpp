@@ -41,9 +41,11 @@ public:
         return m_debugs.value(object);
     }
 
-    void forgetObject(QObject* o) {
-        if (o)
-            setDebugForObject(o, nullptr);
+    void forgetObject(QObject* object) {
+        if (!object)
+            return;
+        Q_ASSERT(m_debugs.value(object) != nullptr);
+        m_debugs[object] = nullptr;
     }
 };
 

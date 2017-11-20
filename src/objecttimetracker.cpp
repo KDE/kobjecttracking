@@ -32,6 +32,14 @@
 
 #include "objectwatcher.h"
 
+class ObjectHistory
+{
+public:
+    QString name;
+    QJsonObject initial;
+    QVector<QJsonObject> events;
+};
+
 Q_GLOBAL_STATIC_WITH_ARGS(const qint64, s_beginning, (QDateTime::currentDateTime().toMSecsSinceEpoch()))
 
 struct TimeTrackerWriter : QObject {
@@ -80,9 +88,18 @@ private:
 };
 Q_GLOBAL_STATIC(TimeTrackerWriter, s_writer)
 
+static QString variantToString(const QVariant &v)
+{
+    QString val;
+    QDebug d(&val);
+    d << v;
+    return val;
+}
+
 ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     : QObject()
     , m_object(o)
+    , m_history(new ObjectHistory)
 {
     *s_beginning * 1; // ensure it's initialized
 
@@ -95,8 +112,8 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
     connect(o, &QObject::destroyed, this, &ObjectTimeTracker::objectDestroyed);
 
     auto mo = m_object->metaObject();
-    m_history.name = QString::fromUtf8(mo->className());
-    m_history.events.append(QJsonObject {
+    m_history->name = QString::fromUtf8(mo->className());
+    m_history->events.append(QJsonObject {
         { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
         { QStringLiteral("type"), QStringLiteral("constructor") },
         { QStringLiteral("name"), {} },
@@ -108,7 +125,7 @@ ObjectTimeTracker::ObjectTimeTracker(QObject* o)
 
     for (int i = 0, pc = mo->propertyCount(); i<pc; ++i) {
         QMetaProperty prop = mo->property(i);
-        m_history.initial[QLatin1String(prop.name())] = prop.read(o);
+        m_history->initial[QLatin1String(prop.name())] = variantToString(prop.read(o));
 
         if (prop.hasNotifySignal())
             connect(o, prop.notifySignal(), this, propChange);
@@ -122,7 +139,7 @@ ObjectTimeTracker::~ObjectTimeTracker()
 
 void ObjectTimeTracker::objectDestroyed()
 {
-    m_history.events.append(QJsonObject {
+    m_history->events.append(QJsonObject {
         { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
         { QStringLiteral("type"), QStringLiteral("destroyed") }
     });
@@ -131,7 +148,7 @@ void ObjectTimeTracker::objectDestroyed()
 
 void ObjectTimeTracker::sync()
 {
-    s_writer->feed(m_object, m_history);
+    s_writer->feed(m_object, *m_history);
 }
 
 void ObjectTimeTracker::propertyChanged()
@@ -143,14 +160,12 @@ void ObjectTimeTracker::propertyChanged()
     for (int i = 0, pc = mo->propertyCount(); i<pc; ++i) {
         const QMetaProperty prop = mo->property(i);
         if (prop.notifySignalIndex() == senderSignalIndex()) {
-            QString val;
-            QDebug d(&val);
-            d << prop.read(m_object);
-            m_history.events.append(QJsonObject {
+
+            m_history->events.append(QJsonObject {
                 { QStringLiteral("time"), QDateTime::currentDateTime().toMSecsSinceEpoch() - *s_beginning },
                 { QStringLiteral("type"), QStringLiteral("property") },
                 { QStringLiteral("name"), QString::fromLatin1(prop.name()) },
-                { QStringLiteral("value"), val }
+                { QStringLiteral("value"), variantToString(prop.read(m_object)) }
             });
         }
     }

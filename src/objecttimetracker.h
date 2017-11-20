@@ -24,17 +24,9 @@
 #include <QVariantMap>
 #include <QDateTime>
 #include <QVector>
+#include <QScopedPointer>
 
-class Containment;
-class Applet;
-
-struct ObjectHistory
-{
-    QString name;
-    QVariantMap initial;
-    QVector<QJsonObject> events;
-};
-
+class ObjectHistory;
 /**
  * This debugging class is meant to provide an overview of how the objects change
  * over time and hopefully provide the information required to detect buggy initialization.
@@ -62,7 +54,7 @@ private Q_SLOTS:
 
 private:
     QObject* m_object;
-    ObjectHistory m_history;
+    QScopedPointer<ObjectHistory> m_history;
 };
 
 #endif // TIMETRACKER_H

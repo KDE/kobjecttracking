@@ -27,11 +27,20 @@ import org.kde.ObjectTracking 1.0
 
 Item {
     ObjectDebug.watch: true
-    ObjectDebug.timeTracking: true
+    ObjectDebug.timeTracker: true
     ObjectDebug.inherit: true
 }
 ```
 
 ### C++
+
+```
+#include <KObjectTracking/ObjectTracking>
+
+{
+    ObjectTracking::self()->track(myObject, ObjectTracking::Watch | ObjectTracking::Track, ObjectTracking::Inherit);
+}
+```
+
 
 ### Tests
